@@ -1,0 +1,5 @@
+INICIO
+nico:=leer(variable_1)+1+2+ooo12;
+hola := (1-2) +3;
+escribir(3,suma,3tami3);
+FIN

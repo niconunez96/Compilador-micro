@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1508352753 source:c:\users\nicolas\desktop\programas codeblocks\compilador-micro\micro\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+

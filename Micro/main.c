@@ -4,27 +4,101 @@
 #define TAMFILA 17
 #define TAMCOLUMNA 13
 
-const char palabraReservada [10][10]=
+typedef enum {INICIO=1,FIN,LEER,ESCRIBIR,ID,CONSTANTE,PARENIZQUIERDO,PARENDERECHO,PUNTOYCOMA,COMA,ASIGNACION,SUMA,RESTA,FDT,ERROR}TOKEN;
+int cursor=0;
+
+struct simbolo
 {
-  {'I','N','I','C','I','O','\0'},
-  {'F','I','N','\0'},
-  {'l','e','e','r','\0'},
-  {'e','s','c','r','i','b','i','r','\0'},
+    char palabra[32];
+    TOKEN token;
 };
 
-/*strcpy(*palabrasReservadas[1],"FIN");
-strcpy(*palabrasReservadas[2],"leer");
-strcpy(*palabrasReservadas[3],"escribir");*/
+struct simbolo tablaSimbolos[1000];
+
+void inicializarTablaSimbolos()
+{
+    int c=0;
+    struct simbolo vacio;
+    struct simbolo inicio;
+    struct simbolo fin;
+    struct simbolo escribir;
+    struct simbolo leer;
+    vacio.token=-1;
+    while (c<1000)
+    {
+        tablaSimbolos[c]=vacio;
+        c++;
+    }
+    strcpy(inicio.palabra,"inicio");
+    inicio.token=INICIO;
+    tablaSimbolos[0]=inicio;
+
+    strcpy(fin.palabra,"fin");
+    fin.token=FIN;
+    tablaSimbolos[1]=fin;
+
+    strcpy(escribir.palabra,"escribir");
+    escribir.token=ESCRIBIR;
+    tablaSimbolos[2]=escribir;
+
+    strcpy(leer.palabra,"leer");
+    leer.token=LEER;
+    tablaSimbolos[3]=leer;
+    return;
+}
+
+void agregarATablaSimbolos(char *palabra)
+{
+    int c=0;
+    struct simbolo nuevoId;
+    nuevoId.token=ID;
+    strcpy(nuevoId.palabra,palabra);
+    while(tablaSimbolos[c].token!=-1) c++;
+    tablaSimbolos[c]=nuevoId;
+    return;
+
+}
+
+/*void pasarAMayuscula(char *palabra)
+{
+    int c=0;
+    if (palabra[c]>='a' && palabra[c]<='z')
+    {
+    while(palabra[c])
+    {
+        palabra[c]=palabra[c]-32;
+        c++;
+    }
+    }
+    return;
+}*/
 
 int esPalabraReservada(char palabra[])
 {
     int c=0;
-    while (strcmp(palabra,palabraReservada[c])&& c<=4)
+    while (strcmp(palabra,tablaSimbolos[c].palabra)&& c<=4)
     {
         c++;
     }
     if (c>4) return 0;
     else return 1;
+}
+
+TOKEN devolverPalabraReservada(char palabra[])
+{
+
+    if (strcmp(palabra,"leer")==0)
+        return LEER;
+
+    if (strcmp(palabra,"escribir")==0)
+        return ESCRIBIR;
+
+    if (strcmp(palabra,"inicio")==0)
+        return INICIO;
+
+    if (strcmp(palabra,"fin")==0)
+        return FIN;
+
 }
 
 int estadoSiguiente(int fila,int columna)
@@ -77,85 +151,143 @@ int columna(int caracter)
     }
 }
 
-void tokens (int estado,char palabra[])
+TOKEN tokens (int estado,char palabra[])
 {
+
     switch (estado)
     {
-        case 0:break;
-        case 1:break;
-        case 2:break;
-        case 3:printf("OPERADOR SUMA\n");
-                break;
-        case 4:printf("OPERADOR RESTA\n");
-                break;
-        case 5:printf("PARENTESIS ABIERTO\n");
-                break;
-        case 6:printf("PRENTESIS CERRADO\n");
-                break;
-        case 7:printf("COMA\n");
-                break;
-        case 8:printf("PUNTO Y COMA\n");
-                break;
-        case 9:break;
+        case 3:return SUMA;
+        case 4:return RESTA;
+        case 5:return PARENIZQUIERDO;
+        case 6:return PARENDERECHO;
+        case 7:return COMA;
+        case 8:return PUNTOYCOMA;
         case 10:if (esPalabraReservada(palabra)==1)
                  {
-                    printf("PALABRA RESERVADA\n");
-                    palabra[0]='\0';
-                    break;
+                    return devolverPalabraReservada(palabra);
                  }
-                printf("IDENTIFICADOR\n");
-                palabra[0]='\0';
-                break;
-        case 11:printf("ERROR LEXICOGRAFICO\n");
-                break;
-        case 12:printf("OPERADOR ASIGNACION\n");
-                break;
-        case 13:break;
-        case 14:printf("DIGITO\n");
-                break;
-        case 15:break;
-        case 16:printf("ERROR LEXICOGRAFICO\n");
-                break;
+                //agregarATablaSimbolos(palabra);
+                return ID;
+        case 11:return ERROR;
+        case 12:return ASIGNACION;
+        case 14:return CONSTANTE;
+        case 15:return FDT;
+        case 16:return ERROR;
     }
-   return;
 }
 
-void devolverTokens (char *programaFuente)
+TOKEN devolverTokens (char *programaFuente)
 {
+
     int pos=0;
     int estado=0;
     int _columna=0;
     char caracterLeido;
-    char palabra[32];
+    char buffer[32];
     FILE* programa;
     if (programa=fopen(programaFuente,"rb"))
     {
-        while (estado!=15)
+        fseek(programa,cursor*sizeof(char),SEEK_SET);
+        while ((estado>=0 && estado<=2) || estado==9 || estado==13 )
     {
         caracterLeido=fgetc(programa);
+        cursor++;
         _columna=columna(caracterLeido);
         estado=estadoSiguiente(estado,_columna);
-        if (estado==10 || estado==14 || estado==16)
+        if (estado==10 || estado==14 || estado==16 || estado==15)
             {
-                ungetc(caracterLeido,programa);
+                cursor--;
+                //ungetc(caracterLeido,programa);
                 pos=0;
             }
         if (estado==1)
             {
-                palabra[pos]=caracterLeido;
-                pos++;
-                palabra[pos]='\0';
+                buffer[pos]=caracterLeido;
+                buffer[++pos]='\0';
             }
-        tokens(estado,palabra);
+       // tokens(estado,buffer);
     }
     }
     fclose(programa);
+    return tokens(estado,buffer);
+}
+
+TOKEN proximoToken()
+{
+   TOKEN token;
+   int posicion=cursor;
+   token=devolverTokens("programaDePrueba.txt");
+   cursor=posicion;
+   return token;
 
 }
+
+void match(TOKEN tokenEsperado)
+{
+    TOKEN tokenRecibido=devolverTokens("programaDePrueba.txt");
+    if (tokenEsperado==tokenRecibido)
+        return;
+    printf("Error sintactico (no matchea %d con %d)\n",tokenEsperado,tokenRecibido);
+    return;
+
+}
+
+void programa()
+{
+    match(INICIO);
+    listaDeSentencias();
+    match(FIN);
+}
+
+void listaDeSentencias()
+{
+    sentencia();
+    while(1)
+    {
+        switch(proximoToken())
+        {
+        case ID:
+        case ESCRIBIR:
+        case LEER:sentencia();
+                  break;
+        default: return;
+        }
+    }
+}
+
+void sentencia()
+{
+    TOKEN token=proximoToken("programaDePrueba.txt");
+    switch(token)
+    {
+        case ID: match(ID);
+                 match(ASIGNACION);
+                 //expresion
+                 match(PUNTOYCOMA);
+                 break;
+        case LEER: match(PARENIZQUIERDO);
+                   //lista de identificadores
+                   match(PARENDERECHO);
+                   match(PUNTOYCOMA);
+                   break;
+        case ESCRIBIR: match(PARENIZQUIERDO);
+                       //lista de expresiones
+                       match(PARENDERECHO);
+                       match(PUNTOYCOMA);
+                       break;
+    }
+    return;
+}
+
+
 
 
 int main(int argc,char *argv[])
 {
-        devolverTokens("programaDePrueba.txt");
+        int c=0;
+        inicializarTablaSimbolos();
+        programa();
+        match(FDT);
+
 }
 // Compilador-micro

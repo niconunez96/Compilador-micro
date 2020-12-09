@@ -1,4 +1,3 @@
 # Compilador-micro
 
-Trabajen vagos
 
